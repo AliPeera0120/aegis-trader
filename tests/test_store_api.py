@@ -105,3 +105,24 @@ def test_postgresql_migration_compiles_offline(monkeypatch):
     command.upgrade(config, "head", sql=True)
     sql = output.getvalue()
     assert "CREATE TABLE orders" in sql and "INSERT INTO controls" in sql and "COMMIT" in sql
+
+
+def test_manual_trade_note_requires_auth_and_is_audited(store, tmp_path):
+    token = "n" * 48
+    settings = Settings(
+        _env_file=None, aegis_control_token=token, database_url="sqlite:///:memory:", runtime_dir=tmp_path
+    )
+    store.put("trades", "trade-record", {"order_id": "paper-order"}, "PAPER")
+    with TestClient(create_app(settings, store)) as client:
+        assert (
+            client.post(
+                "/api/control/trades/trade-record/note", json={"note": "Reviewed execution"}
+            ).status_code
+            == 401
+        )
+        client.post("/api/session", json={"token": token})
+        assert client.post(
+            "/api/control/trades/trade-record/note", json={"note": "Reviewed execution"}
+        ).json()["saved"]
+        assert client.get("/api/trades/trade-record/notes").json()[0]["note"] == "Reviewed execution"
+        assert store.events()[0]["event"] == "OPERATOR_TRADE_NOTE"

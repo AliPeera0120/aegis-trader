@@ -32,6 +32,10 @@ class StopRequest(BaseModel):
     flatten: bool = False
 
 
+class TradeNoteRequest(BaseModel):
+    note: str = Field(min_length=1, max_length=4000)
+
+
 class TokenRequest(BaseModel):
     token: str
 
@@ -341,6 +345,30 @@ def create_app(settings=None, store=None, runtime=None):
         if identifier not in jobs:
             raise HTTPException(404, "Job not found; completed experiments persist in the database")
         return jobs[identifier]
+
+    @app.post("/api/control/trades/{identifier}/note")
+    def trade_note(identifier: str, body: TradeNoteRequest):
+        record = store.get(identifier)
+        if not record or record["kind"] != "trades":
+            raise HTTPException(404, "Trade not found")
+        payload = {
+            "trade_id": identifier,
+            "note": body.note.strip(),
+            "at": utcnow().isoformat(),
+            "author": "authenticated-operator",
+        }
+        note_id = stable_id("trade-note", identifier, payload["at"])
+        store.put("trade_notes", note_id, payload, record["mode"])
+        store.log("OPERATOR_TRADE_NOTE", payload)
+        return {"saved": True, "note_id": note_id}
+
+    @app.get("/api/trades/{identifier}/notes")
+    def trade_notes(identifier: str):
+        return [
+            r["payload"]
+            for r in store.list("trade_notes", limit=10000)
+            if r["payload"]["trade_id"] == identifier
+        ]
 
     @app.post("/api/control/connect")
     def connect():

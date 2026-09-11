@@ -13,7 +13,7 @@ Aegis Trader 0.1.0 is implemented and running locally as a research/dashboard ap
 - Event-driven backtesting, three fill scenarios, partial entries, costs, protective/time/trailing/EOD simulation, metrics, attribution, Monte Carlo, gap studies, replay and walk-forward selection.
 - Calibrated classification, regression/ranking diagnostics, purged labels, train-only transforms, reliability metrics, importance/ablation and drift controls.
 - Durable state machine, incremental fills, duplicate updates, uncertain submission reconciliation, reservations, kill/resume latches, liquidation attribution and single-owner runtime service.
-- Six-view responsive dashboard, asynchronous research jobs, separate equity modes, account/P&L records, candidate explanations, evidence comparison, trade journal, risk gates and audit inspection.
+- Six-view responsive dashboard, asynchronous research jobs, separate equity modes, account/P&L records, candidate explanations, evidence comparison, trade journal with auditable manual review notes, risk gates and audit inspection.
 - Session reporting with expected-fill replay/comparison, rolling decay, explicit fee reconciliation, operator paper-check certification, derived evidence and sequential promotion.
 - Auditable expiring readiness override that cannot waive configuration, capital, critical errors, strategy eligibility or deterministic risk.
 
@@ -23,7 +23,7 @@ Local dashboard: `http://127.0.0.1:8000/`. Trading worker is disabled; broker is
 
 ## TESTS PASSING
 
-- **113 passed, 2 skipped** in the full automated suite. The skips are the two opt-in, credentialed Alpaca PAPER tests.
+- **114 passed, 2 skipped** in the full automated suite. The skips are the two opt-in, credentialed Alpaca PAPER tests.
 - Approximately **78% line coverage overall**, **95% risk engine**, **99% domain validation**, **93% ML**, **86% backtest**. The live service/network paths have lower coverage and remain subject to real-paper qualification.
 - Ruff lint and JavaScript syntax checks pass.
 - Secret-pattern scan passes.
