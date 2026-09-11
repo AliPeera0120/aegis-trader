@@ -1,0 +1,31 @@
+services:
+  aegis:
+    build: .
+    restart: unless-stopped
+    init: true
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      TRADING_MODE: PAPER
+      DATABASE_URL: sqlite:////app/var/aegis.db
+      AEGIS_CONTROL_TOKEN: ${AEGIS_CONTROL_TOKEN:?Set a random control token}
+      ALPACA_PAPER_KEY: ${ALPACA_PAPER_KEY:-}
+      ALPACA_PAPER_SECRET: ${ALPACA_PAPER_SECRET:-}
+      ALPACA_DATA_KEY: ${ALPACA_DATA_KEY:-}
+      ALPACA_DATA_SECRET: ${ALPACA_DATA_SECRET:-}
+      DATA_FEED: ${DATA_FEED:-iex}
+      SERVICE_ENABLED: ${SERVICE_ENABLED:-false}
+      ALLOWED_HOSTS: localhost,127.0.0.1
+      LIVE_TRADING_ENABLED: "false"
+    volumes:
+      - aegis-data:/app/var
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+volumes:
+  aegis-data:

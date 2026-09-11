@@ -1,0 +1,9 @@
+# Verification
+
+Run `pytest -q`, `ruff check .`, `python scripts/secret_scan.py`, and `node --check src/aegis/static/app.js`. Tests use mocks and synthetic data by default. The `paper` marker is opt-in with AEGIS_RUN_PAPER_INTEGRATION=1 and refuses LIVE configuration. No test submits a live order.
+
+Coverage includes OHLC/timestamps, holiday/early-close/DST calendars, missing/duplicate bars, complete resampling, prefix-invariant features and future poisoning; baseline strategies; deterministic backtests; latency/partial fills/limit prices/cost arithmetic; chronological folds and purge; calibrated ML/ablation/drift; bounded risk and reservations; every live configuration lock; duplicate/partial fills; uncertain submissions; unowned orders; stops and daily latch; immutable evidence/promotion; concurrent audit chains and tampering; authenticated API/CSRF/host defense; research jobs; market-event processing; scanner-to-execution flow; and SDK request construction.
+
+Test results and qualification gaps are maintained in BUILD_STATUS.md. The actual local dashboard is also checked by opening it in the browser and running the synthetic research form through completion. Network access is not required for the default test suite.
+
+Mandatory real-paper acceptance remains separate: authenticating, receiving entitled streams, placing a bounded bracket through the complete engine, cancellation, partial-fill/stop behavior, restart recovery, missed updates, broker reconciliation, emergency stop and a full automated session. Paper P&L must include reconciled fees before readiness evidence is certified. Docker and PostgreSQL runtime checks must run where those services are available.

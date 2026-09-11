@@ -1,0 +1,31 @@
+name: Aegis verification
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - run: pip install -r requirements.lock
+      - run: pip install --no-deps -e .
+      - run: ruff check .
+      - run: python scripts/secret_scan.py
+      - run: pytest -q --cov=aegis --cov-report=term-missing
+        env:
+          TRADING_MODE: PAPER
+          LIVE_TRADING_ENABLED: 'false'
+      - run: docker build -t aegis-trader:test .
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

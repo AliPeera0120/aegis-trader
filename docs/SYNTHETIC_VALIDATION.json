@@ -1,0 +1,450 @@
+[
+  {
+    "id": "330825eecfdd218b697a311b6534f00a73555a6ad988fc6a36fac159b6e5cdaa",
+    "dataset_id": "393e0ac38aaf369fd64fbaa13595ae505da2cf79555affcf7cb6a6a444b05110",
+    "synthetic": true,
+    "strategy": {
+      "name": "orb",
+      "version": "0cbc34492daa",
+      "parameters": {},
+      "status": "IDEA",
+      "enabled": false,
+      "research_only": true,
+      "description": "Completed-bar breakout above a finished 5, 15 or 30 minute opening range."
+    },
+    "fill_model": {
+      "name": "conservative",
+      "spread_bps": 8,
+      "slippage_bps": 8,
+      "fee_per_share": 0.01,
+      "participation": 0.005,
+      "latency_seconds": 2
+    },
+    "config": {
+      "initial_equity": 100000,
+      "max_hold_minutes": 45,
+      "order_ttl_minutes": 3,
+      "flatten_minutes_before_close": 5,
+      "trailing_atr": null,
+      "seed": 7
+    },
+    "metrics": {
+      "trade_count": 2,
+      "total_return": -9.793336451302537e-05,
+      "net_pnl": -9.793336451303944,
+      "marked_pnl": -9.793336451301002,
+      "gross_pnl": -9.433336451303944,
+      "average_winner": null,
+      "average_loser": -4.896668225651972,
+      "win_rate": 0.0,
+      "loss_rate": 1.0,
+      "payoff_ratio": null,
+      "profit_factor": 0.0,
+      "expectancy": -4.896668225651972,
+      "median_trade": -4.896668225651972,
+      "trade_std": 0.5714830127626263,
+      "max_drawdown": 0.00010095468395825839,
+      "average_drawdown": 6.194646290772911e-05,
+      "drawdown_duration_bars": 1132,
+      "sharpe": null,
+      "sortino": null,
+      "ratio_basis": "Daily log equity returns; 252 sessions, zero risk-free rate; suppressed below 20 days",
+      "turnover": 0.03619026878940971,
+      "average_exposure": 0.0003008389641242232,
+      "average_holding_minutes": 19.5,
+      "trades_per_day": 0.6666666666666666,
+      "fees": 0.36,
+      "slippage_cost": 2.895216616261936,
+      "spread_cost": 1.4476083081308553,
+      "largest_win": -4.4925687119946005,
+      "largest_loss": -5.300767739309343,
+      "attribution": {
+        "symbol": {
+          "SPY": {
+            "trades": 2,
+            "net_pnl": -9.793336451303944,
+            "expectancy": -4.896668225651972
+          }
+        },
+        "strategy": {
+          "orb": {
+            "trades": 2,
+            "net_pnl": -9.793336451303944,
+            "expectancy": -4.896668225651972
+          }
+        },
+        "sector": {
+          "unknown": {
+            "trades": 2,
+            "net_pnl": -9.793336451303944,
+            "expectancy": -4.896668225651972
+          }
+        },
+        "regime": {
+          "range_bound": {
+            "trades": 2,
+            "net_pnl": -9.793336451303944,
+            "expectancy": -4.896668225651972
+          }
+        },
+        "side": {
+          "buy": {
+            "trades": 2,
+            "net_pnl": -9.793336451303944,
+            "expectancy": -4.896668225651972
+          }
+        },
+        "hour": {
+          "9": {
+            "trades": 1,
+            "net_pnl": -4.4925687119946005,
+            "expectancy": -4.4925687119946005
+          },
+          "10": {
+            "trades": 1,
+            "net_pnl": -5.300767739309343,
+            "expectancy": -5.300767739309343
+          }
+        },
+        "weekday": {
+          "Monday": {
+            "trades": 1,
+            "net_pnl": -4.4925687119946005,
+            "expectancy": -4.4925687119946005
+          },
+          "Wednesday": {
+            "trades": 1,
+            "net_pnl": -5.300767739309343,
+            "expectancy": -5.300767739309343
+          }
+        },
+        "volatility_bucket": {
+          "normal": {
+            "trades": 2,
+            "net_pnl": -9.793336451303944,
+            "expectancy": -4.896668225651972
+          }
+        },
+        "market_direction": {
+          "down_or_flat": {
+            "trades": 2,
+            "net_pnl": -9.793336451303944,
+            "expectancy": -4.896668225651972
+          }
+        }
+      }
+    }
+  },
+  {
+    "id": "94209c7e02a6f41afd56502f9f5ae92c99cbd076899a28deb4ba2997437c0db2",
+    "dataset_id": "393e0ac38aaf369fd64fbaa13595ae505da2cf79555affcf7cb6a6a444b05110",
+    "synthetic": true,
+    "strategy": {
+      "name": "orb",
+      "version": "0cbc34492daa",
+      "parameters": {},
+      "status": "IDEA",
+      "enabled": false,
+      "research_only": true,
+      "description": "Completed-bar breakout above a finished 5, 15 or 30 minute opening range."
+    },
+    "fill_model": {
+      "name": "standard",
+      "spread_bps": 2,
+      "slippage_bps": 2,
+      "fee_per_share": 0.005,
+      "participation": 0.01,
+      "latency_seconds": 1
+    },
+    "config": {
+      "initial_equity": 100000,
+      "max_hold_minutes": 45,
+      "order_ttl_minutes": 3,
+      "flatten_minutes_before_close": 5,
+      "trailing_atr": null,
+      "seed": 7
+    },
+    "metrics": {
+      "trade_count": 5,
+      "total_return": -1.3483889990006936e-05,
+      "net_pnl": -1.348388999009983,
+      "marked_pnl": -1.3483889990020543,
+      "gross_pnl": -0.9583889990099834,
+      "average_winner": 4.545554425896128,
+      "average_loser": -3.4798326169340803,
+      "win_rate": 0.4,
+      "loss_rate": 0.6,
+      "payoff_ratio": 1.3062566296366882,
+      "profit_factor": 0.8708377530911254,
+      "expectancy": -0.26967779980199663,
+      "median_trade": -2.7842332355546766,
+      "trade_std": 4.420632858879853,
+      "max_drawdown": 7.654781837672126e-05,
+      "average_drawdown": 2.8519392802054784e-05,
+      "drawdown_duration_bars": 419,
+      "sharpe": null,
+      "sortino": null,
+      "ratio_basis": "Daily log equity returns; 252 sessions, zero risk-free rate; suppressed below 20 days",
+      "turnover": 0.0901410864742774,
+      "average_exposure": 0.000769055016467395,
+      "average_holding_minutes": 20.2,
+      "trades_per_day": 1.6666666666666667,
+      "fees": 0.39,
+      "slippage_cost": 1.8027157423029556,
+      "spread_cost": 0.9013578711514973,
+      "largest_win": 4.6534329181304095,
+      "largest_loss": -4.083280092793196,
+      "attribution": {
+        "symbol": {
+          "SPY": {
+            "trades": 3,
+            "net_pnl": -1.7027848398786354,
+            "expectancy": -0.5675949466262118
+          },
+          "MSFT": {
+            "trades": 1,
+            "net_pnl": 4.437675933661848,
+            "expectancy": 4.437675933661848
+          },
+          "AAPL": {
+            "trades": 1,
+            "net_pnl": -4.083280092793196,
+            "expectancy": -4.083280092793196
+          }
+        },
+        "strategy": {
+          "orb": {
+            "trades": 5,
+            "net_pnl": -1.348388999009983,
+            "expectancy": -0.26967779980199663
+          }
+        },
+        "sector": {
+          "unknown": {
+            "trades": 5,
+            "net_pnl": -1.348388999009983,
+            "expectancy": -0.26967779980199663
+          }
+        },
+        "regime": {
+          "range_bound": {
+            "trades": 5,
+            "net_pnl": -1.348388999009983,
+            "expectancy": -0.26967779980199663
+          }
+        },
+        "side": {
+          "buy": {
+            "trades": 5,
+            "net_pnl": -1.348388999009983,
+            "expectancy": -0.26967779980199663
+          }
+        },
+        "hour": {
+          "9": {
+            "trades": 2,
+            "net_pnl": 1.6534426981071713,
+            "expectancy": 0.8267213490535856
+          },
+          "10": {
+            "trades": 3,
+            "net_pnl": -3.0018316971171544,
+            "expectancy": -1.000610565705718
+          }
+        },
+        "weekday": {
+          "Monday": {
+            "trades": 2,
+            "net_pnl": 1.6534426981071713,
+            "expectancy": 0.8267213490535856
+          },
+          "Tuesday": {
+            "trades": 1,
+            "net_pnl": 4.6534329181304095,
+            "expectancy": 4.6534329181304095
+          },
+          "Wednesday": {
+            "trades": 2,
+            "net_pnl": -7.655264615247564,
+            "expectancy": -3.827632307623782
+          }
+        },
+        "volatility_bucket": {
+          "normal": {
+            "trades": 5,
+            "net_pnl": -1.348388999009983,
+            "expectancy": -0.26967779980199663
+          }
+        },
+        "market_direction": {
+          "down_or_flat": {
+            "trades": 3,
+            "net_pnl": -1.7027848398786354,
+            "expectancy": -0.5675949466262118
+          },
+          "up": {
+            "trades": 2,
+            "net_pnl": 0.3543958408686523,
+            "expectancy": 0.17719792043432614
+          }
+        }
+      }
+    }
+  },
+  {
+    "id": "fbea9cebdfc3027d12ee5959bd3c680859b1f678ac37494f4066b30a45c1212f",
+    "dataset_id": "393e0ac38aaf369fd64fbaa13595ae505da2cf79555affcf7cb6a6a444b05110",
+    "synthetic": true,
+    "strategy": {
+      "name": "orb",
+      "version": "0cbc34492daa",
+      "parameters": {},
+      "status": "IDEA",
+      "enabled": false,
+      "research_only": true,
+      "description": "Completed-bar breakout above a finished 5, 15 or 30 minute opening range."
+    },
+    "fill_model": {
+      "name": "optimistic",
+      "spread_bps": 0,
+      "slippage_bps": 0,
+      "fee_per_share": 0,
+      "participation": 0.1,
+      "latency_seconds": 0
+    },
+    "config": {
+      "initial_equity": 100000,
+      "max_hold_minutes": 45,
+      "order_ttl_minutes": 3,
+      "flatten_minutes_before_close": 5,
+      "trailing_atr": null,
+      "seed": 7
+    },
+    "metrics": {
+      "trade_count": 5,
+      "total_return": 2.298836419312167e-05,
+      "net_pnl": 2.2988364193184907,
+      "marked_pnl": 2.298836419315194,
+      "gross_pnl": 2.2988364193184907,
+      "average_winner": 5.27137701782091,
+      "average_loser": -2.747972538774443,
+      "win_rate": 0.4,
+      "loss_rate": 0.6,
+      "payoff_ratio": 1.9182786375921608,
+      "profit_factor": 1.2788524250614406,
+      "expectancy": 0.45976728386369814,
+      "median_trade": -2.702099911686176,
+      "trade_std": 4.394038321742229,
+      "max_drawdown": 6.238808231167455e-05,
+      "average_drawdown": 2.3152089961345432e-05,
+      "drawdown_duration_bars": 416,
+      "sharpe": null,
+      "sortino": null,
+      "ratio_basis": "Daily log equity returns; 252 sessions, zero risk-free rate; suppressed below 20 days",
+      "turnover": 0.09012495259182106,
+      "average_exposure": 0.000807557991214888,
+      "average_holding_minutes": 21.2,
+      "trades_per_day": 1.6666666666666667,
+      "fees": 0,
+      "slippage_cost": 0.0,
+      "spread_cost": 0.0,
+      "largest_win": 5.433565705086124,
+      "largest_loss": -2.806710607095283,
+      "attribution": {
+        "symbol": {
+          "SPY": {
+            "trades": 3,
+            "net_pnl": -0.003641304141922319,
+            "expectancy": -0.0012137680473074397
+          },
+          "MSFT": {
+            "trades": 1,
+            "net_pnl": 5.109188330555696,
+            "expectancy": 5.109188330555696
+          },
+          "AAPL": {
+            "trades": 1,
+            "net_pnl": -2.806710607095283,
+            "expectancy": -2.806710607095283
+          }
+        },
+        "strategy": {
+          "orb": {
+            "trades": 5,
+            "net_pnl": 2.2988364193184907,
+            "expectancy": 0.45976728386369814
+          }
+        },
+        "sector": {
+          "unknown": {
+            "trades": 5,
+            "net_pnl": 2.2988364193184907,
+            "expectancy": 0.45976728386369814
+          }
+        },
+        "regime": {
+          "range_bound": {
+            "trades": 5,
+            "net_pnl": 2.2988364193184907,
+            "expectancy": 0.45976728386369814
+          }
+        },
+        "side": {
+          "buy": {
+            "trades": 5,
+            "net_pnl": 2.2988364193184907,
+            "expectancy": 0.45976728386369814
+          }
+        },
+        "hour": {
+          "9": {
+            "trades": 2,
+            "net_pnl": 2.4070884188695203,
+            "expectancy": 1.2035442094347601
+          },
+          "10": {
+            "trades": 3,
+            "net_pnl": -0.1082519995510296,
+            "expectancy": -0.0360839998503432
+          }
+        },
+        "weekday": {
+          "Monday": {
+            "trades": 2,
+            "net_pnl": 2.4070884188695203,
+            "expectancy": 1.2035442094347601
+          },
+          "Tuesday": {
+            "trades": 1,
+            "net_pnl": 5.433565705086124,
+            "expectancy": 5.433565705086124
+          },
+          "Wednesday": {
+            "trades": 2,
+            "net_pnl": -5.541817704637154,
+            "expectancy": -2.770908852318577
+          }
+        },
+        "volatility_bucket": {
+          "normal": {
+            "trades": 5,
+            "net_pnl": 2.2988364193184907,
+            "expectancy": 0.45976728386369814
+          }
+        },
+        "market_direction": {
+          "down_or_flat": {
+            "trades": 3,
+            "net_pnl": -0.003641304141922319,
+            "expectancy": -0.0012137680473074397
+          },
+          "up": {
+            "trades": 2,
+            "net_pnl": 2.302477723460413,
+            "expectancy": 1.1512388617302065
+          }
+        }
+      }
+    }
+  }
+]

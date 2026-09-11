@@ -1,0 +1,1 @@
+{"version":"1","symbols":["SPY","QQQ","IWM","AAPL","MSFT","NVDA","AMZN","META","GOOGL"],"min_price":5,"max_price":2000,"min_adv":1000000,"min_dollar_volume":20000000,"max_spread_pct":0.002,"min_market_cap":null,"exchanges":["NASDAQ","NYSE","ARCA","AMEX"],"min_volatility":0,"max_volatility":0.2,"require_shortable":false,"point_in_time":false}

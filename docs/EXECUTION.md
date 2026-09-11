@@ -1,0 +1,13 @@
+# Execution and recovery
+
+The state machine includes PROPOSED, RISK_APPROVED, SUBMITTED, ACKNOWLEDGED, PARTIALLY_FILLED, FILLED, CANCELED, REJECTED, EXIT_PENDING, CLOSED and ERROR. Identical state updates are idempotent. Submission acknowledgment is not a fill. Regressive duplicate messages are ignored; cumulative fill quantities produce incremental quantities and volume-weighted incremental prices.
+
+Execution reconciles before each entry, then evaluates risk against broker positions and durable local pending reservations. Authorization is saved before submitting. A deterministic `aegis-…` client order ID prevents duplicate candidates from producing new orders. Timeouts enter ERROR and hold reserved capacity; the next reconciliation queries the same client ID. No uncertain order is retried automatically.
+
+Broker state wins for positions and orders. Unowned open broker orders, potentially truncated order listings, stale clocks or unavailable reads prevent new entries. Existing positions are saved as authoritative snapshots. Trade-update streams trigger reconciliation; periodic REST reads recover missed updates. Native bracket legs supply protective exit fills. Explicit liquidation order IDs are recorded and reconciled back to owned positions.
+
+STOP TRADING first persists the latch. Entirely unfilled owned entries can be canceled. Partially filled brackets are retained because canceling a parent can also remove broker protection; the API reports retained partial brackets. An explicit flatten request cancels orders through Alpaca's close-all workflow and requests liquidation. Until subsequent broker reconciliation verifies fills, flattening is not called complete. Rejected liquidation responses are audited. This behavior requires real-paper qualification, especially partial parent cancellation and stop activation.
+
+Known limit: broker manual trades, external cash flows, fees, canceled partial brackets with manually managed exits, and complex mixed-ownership liquidations require operator review. The position snapshot remains authoritative even when local round-trip attribution is incomplete. These records cannot qualify as verified net paper evidence until reconciled.
+
+Audit events record candidate features/reasons/version, risk sizing/reasons, sent order, broker acknowledgment, incremental fills, state transitions, closure, errors and emergency actions. Events form a SHA-256 chain serialized by a database lock row. This is tamper-evident within the retained chain, not WORM storage; an administrator can rewrite or truncate a database and recompute hashes. Export and anchor heads externally for stronger guarantees.

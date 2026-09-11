@@ -1,0 +1,9 @@
+# ML experiments
+
+`aegis ml --rows feature-labels.json --features return_5m,relative_volume,atr --model logistic --calibration platt` consumes JSON rows containing `timestamp`, `label_end`, `symbol`, `features` and binary `target`. Optional `future_return` enables a Ridge regression and ranked expected-return diagnostic. Targets are outcomes, never contemporaneous feature inputs.
+
+Chronological train/validation/test splitting is 60/20/20 by rows, followed by purging any label reaching the next period and a five-minute embargo. Minimum 50 rows and both classes in train/calibration are required. Logistic regression includes train-only scaling. Random forest and gradient boosting are bounded alternatives. Platt scaling or isotonic regression fit validation only.
+
+Reports include Brier score, log loss, expected calibration error, reliability-curve coordinates, probability histogram, constant baseline, calibrated permutation importance, and leave-one-feature-out test diagnostics. Regression is compared to the train-only mean prediction. Source reports are persisted as immutable model-version records. No pickle from an external source is loaded and no model is automatically deployed.
+
+Drift uses training-reference quantile bins and population stability index, plus a separate constant-feature shift rule. Missing/nonfinite/insufficient data blocks eligibility. Rolling decay reports 20/50/100 trades and 20/60 days. The runtime can persist auto-suspension controls; candidate risk checks honor them. Live probability calibration requires actual scored prediction/outcome records; it is not inferred from signal scores.
