@@ -2,6 +2,8 @@
 
 Run `pytest -q`, `ruff check .`, `python scripts/secret_scan.py`, and `node --check src/aegis/static/app.js`. Tests use mocks and synthetic data by default. The `paper` marker is opt-in with AEGIS_RUN_PAPER_INTEGRATION=1 and refuses LIVE configuration. No test submits a live order.
 
+CI also runs Gitleaks 8.30.1 against all fetched Git history, including root commits and merge diffs. The official binary is pinned and SHA-256 verified before execution. To repeat this scan locally with that version installed, run `gitleaks git . --redact --verbose --log-opts="--all --full-history -m" --exit-code=2`. A detected secret returns 2; scanner errors also fail the job. This avoids the initial-push failure caused by asking Git for the nonexistent parent of a root commit. Findings are redacted in the job log.
+
 Coverage includes OHLC/timestamps, holiday/early-close/DST calendars, missing/duplicate bars, complete resampling, prefix-invariant features and future poisoning; baseline strategies; deterministic backtests; latency/partial fills/limit prices/cost arithmetic; chronological folds and purge; calibrated ML/ablation/drift; bounded risk and reservations; every live configuration lock; duplicate/partial fills; uncertain submissions; unowned orders; stops and daily latch; immutable evidence/promotion; concurrent audit chains and tampering; authenticated API/CSRF/host defense; research jobs; market-event processing; scanner-to-execution flow; and SDK request construction.
 
 Test results and qualification gaps are maintained in BUILD_STATUS.md. The actual local dashboard is also checked by opening it in the browser and running the synthetic research form through completion. Network access is not required for the default test suite.
