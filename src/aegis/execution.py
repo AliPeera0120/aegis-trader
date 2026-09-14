@@ -244,6 +244,9 @@ class ExecutionService:
                 return {"status": "REJECTED", "reasons": ["BROKER_MODE_MISMATCH"]}
             if not self.reconcile():
                 return {"status": "REJECTED", "reasons": ["RECONCILIATION_FAILED"]}
+            # Reconciliation obtained a newer broker timestamp over the network.
+            # Compare it with a decision time sampled after that response.
+            now = utcnow()
             p = self.portfolio(candidate, quote, now)
             learning = self.broker.mode == "PAPER" and permitted(
                 self.settings, self.store, candidate.strategy, candidate.version
@@ -268,7 +271,7 @@ class ExecutionService:
                 candidate,
                 quote,
                 p,
-                now,
+                utcnow(),
                 live_capital=self.settings.live_capital_limit if self.mode == "LIVE" else None,
                 live_order_cap=self.settings.live_max_order_notional
                 if self.mode == "LIVE"

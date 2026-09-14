@@ -563,10 +563,17 @@ class TradingRuntime:
                 )
                 try:
                     self.run_cycle(now)
-                except Exception:
+                except Exception as exc:
                     self.execution.healthy = False
                     self.store.set_control("critical_error", True)
-                    self.store.log("SERVICE_ERROR", {"entries_disabled": True, "at": now.isoformat()})
+                    self.store.log(
+                        "SERVICE_ERROR",
+                        {
+                            "entries_disabled": True,
+                            "at": utcnow().isoformat(),
+                            "error_type": type(exc).__name__,
+                        },
+                    )
                 self.stop_event.wait(self.settings.scan_interval_seconds)
         finally:
             for stream in self.streams:

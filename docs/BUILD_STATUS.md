@@ -1,6 +1,6 @@
 # Build status — 2026-09-11
 
-This is the initial build record. For subsequent credentialed checks and supervised paper deployment, see [September 14 session preparation](SESSION_READINESS_2026-09-14.md). The latest offline suite passes 138 tests; three real-paper account/history/stream checks also passed separately. Real fills and full-session qualification remain pending.
+This is the initial build record; the CURRENT section below describes September 11. For subsequent credentialed checks, deployment and the unsuccessful September 14 session, see [September 14 outcome and recovery](SESSION_READINESS_2026-09-14.md). The latest offline suite passes 141 tests; three real-paper account/history/stream checks also passed separately before that session. Connectivity and clock-ordering repairs are deployed. There are still zero paper trades, and real fills and full-session qualification remain pending.
 
 ## Release boundary
 

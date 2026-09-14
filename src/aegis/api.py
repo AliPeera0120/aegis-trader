@@ -41,6 +41,13 @@ class TokenRequest(BaseModel):
     token: str
 
 
+def recent_stamp(payload, seconds, key="at"):
+    try:
+        return 0 <= (utcnow() - datetime.fromisoformat(payload[key])).total_seconds() <= seconds
+    except (KeyError, TypeError, ValueError):
+        return False
+
+
 def create_app(settings=None, store=None, runtime=None):
     settings = settings or Settings()
     store = store or Store(settings.database_url.get_secret_value())
@@ -142,8 +149,24 @@ def create_app(settings=None, store=None, runtime=None):
         snapshots = store.list("account_snapshots", mode, 1)
         positions = store.get("positions:" + mode)
         health = store.control("health:" + mode, {"broker_connected": False, "reconciled": False})
-        if health.get("at") and (utcnow() - datetime.fromisoformat(health["at"])).total_seconds() > 60:
+        if not recent_stamp(health, 60):
             health = {**health, "broker_connected": False, "reconciled": False, "stale": True}
+        service = store.control("service", {"running": False})
+        heartbeat = store.control("heartbeat", {})
+        if service.get("running") and not recent_stamp(heartbeat, 60):
+            service = {**service, "running": False, "stale": True}
+        service = {**service, "heartbeat_at": heartbeat.get("at")}
+        data = store.control("data_health", {"connected": False})
+        if not recent_stamp(data, settings.max_quote_age_seconds):
+            data = {**data, "connected": False, "stale": True}
+        streams = store.control("streams", {})
+        if not recent_stamp(streams, 60):
+            streams = {
+                **streams,
+                "market_data_authenticated": False,
+                "trade_updates_authenticated": False,
+                "stale": True,
+            }
         from aegis.data import NY
 
         baseline = store.control(f"day:{mode}:{utcnow().astimezone(NY).date()}", {})
@@ -168,8 +191,9 @@ def create_app(settings=None, store=None, runtime=None):
             "account": snapshots[0]["payload"] if snapshots else None,
             "positions": positions["payload"] if positions else [],
             "broker": health,
-            "data": store.control("data_health", {"connected": False}),
-            "service": store.control("service", {"running": False}),
+            "data": data,
+            "service": service,
+            "critical_error": store.control("critical_error", False),
             "kill_switch": store.control("stop:" + mode, {"stopped": False}),
             "live": runtime.registry.live_readiness(settings),
             "credentials_configured": all(settings.credentials()),
@@ -178,7 +202,7 @@ def create_app(settings=None, store=None, runtime=None):
             "feed": settings.data_feed,
             "time": utcnow().isoformat(),
             "market_clock": store.control("market_clock", {}),
-            "streams": store.control("streams", {}),
+            "streams": streams,
             "session": store.control("session", {}),
             "paper_learning": learning_status(settings, store),
         }

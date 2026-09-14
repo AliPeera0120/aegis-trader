@@ -164,11 +164,12 @@ class AlpacaData:
     def __init__(self, settings, repository):
         from alpaca.data.historical import StockHistoricalDataClient
         from alpaca.data.enums import DataFeed
+        from aegis.transport import bound_requests
 
         key, secret = settings.data_credentials()
         if not key or not secret:
             raise RuntimeError("Market-data credentials are not configured")
-        self.client = StockHistoricalDataClient(key, secret)
+        self.client = bound_requests(StockHistoricalDataClient(key, secret))
         self.feed = DataFeed(settings.data_feed)
         self.repository, self.settings = repository, settings
 

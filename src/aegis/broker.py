@@ -55,8 +55,9 @@ class _AlpacaBroker:
         if not key or not secret:
             raise BrokerError(f"{mode} credentials are not configured")
         from alpaca.trading.client import TradingClient
+        from aegis.transport import bound_requests
 
-        self._client = client or TradingClient(key, secret, paper=mode == "PAPER")
+        self._client = client or bound_requests(TradingClient(key, secret, paper=mode == "PAPER"))
 
     def _call(self, name, *args, **kwargs):
         try:
