@@ -45,7 +45,7 @@ def test_stream_event_processing_quarantine_and_recovery(store, settings):
 
 def test_stream_bar_and_trade(store, settings):
     runtime = TradingRuntime(settings, store, broker=FakeBroker())
-    start = utcnow().replace(second=0, microsecond=0) - timedelta(minutes=1)
+    start = datetime(2025, 1, 6, 15, 0, tzinfo=timezone.utc)
     runtime._enqueue(
         "bar",
         {

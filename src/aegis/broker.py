@@ -82,7 +82,12 @@ class _AlpacaBroker:
         )
 
     def get_order(self, client_order_id):
-        return self._call("get_order_by_client_id", client_order_id)
+        order = self._call("get_order_by_client_id", client_order_id)
+        if order.get("order_class") in {"bracket", "oco", "oto"}:
+            from alpaca.trading.requests import GetOrderByIdRequest
+
+            return self._call("get_order_by_id", order["id"], filter=GetOrderByIdRequest(nested=True))
+        return order
 
     def get_order_by_id(self, identifier):
         return self._call("get_order_by_id", identifier)
@@ -102,6 +107,8 @@ class _AlpacaBroker:
         if not isinstance(approved, ApprovedOrder):
             raise ValueError("Only a persisted risk-approved order may be submitted")
         if self.mode == "LIVE":
+            if "PAPER_EXPERIMENT" in approved.decision.reasons:
+                raise BrokerError("Paper experiments cannot be routed to LIVE")
             locks = self.settings.live_locks()
             readiness = self.readiness() if self.readiness else {"locked": True}
             if locks or readiness["locked"]:
@@ -145,9 +152,10 @@ class _AlpacaBroker:
 
     def stream_trade_updates(self, handler):
         from alpaca.trading.stream import TradingStream
+        from aegis.tls import websocket_params
 
         key, secret = self.settings.credentials(self.mode)
-        stream = TradingStream(key, secret, paper=self.mode == "PAPER")
+        stream = TradingStream(key, secret, paper=self.mode == "PAPER", websocket_params=websocket_params())
         stream.subscribe_trade_updates(handler)
         return stream
 

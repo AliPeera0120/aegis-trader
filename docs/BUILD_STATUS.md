@@ -1,5 +1,7 @@
 # Build status — 2026-09-11
 
+This is the initial build record. For subsequent credentialed checks and supervised paper deployment, see [September 14 session preparation](SESSION_READINESS_2026-09-14.md). The latest offline suite passes 138 tests; three real-paper account/history/stream checks also passed separately. Real fills and full-session qualification remain pending.
+
 ## Release boundary
 
 Aegis Trader 0.1.0 is implemented and running locally as a research/dashboard application with a mock-tested execution path. The complete production V1 acceptance criteria are **not yet certified**: real Alpaca paper credentials, a full paper lifecycle/session, and Docker/PostgreSQL runtime verification remain necessary. Live trading is locked. No live configuration, operator certification or readiness override was enabled.

@@ -7,7 +7,7 @@ name = "aegis-trader"
 version = "0.1.0"
 description = "Auditable intraday equities research and risk-gated execution"
 requires-python = ">=3.13,<3.14"
-dependencies = ["fastapi>=0.115,<1", "uvicorn[standard]>=0.30,<1", "sqlalchemy>=2.0,<3", "alembic>=1.14,<2", "pydantic-settings>=2.7,<3", "numpy>=2,<3", "pandas>=2.2,<4", "scipy>=1.14,<2", "scikit-learn>=1.6,<2", "exchange-calendars>=4.7,<5", "alpaca-py>=0.40,<1", "psycopg[binary]>=3.2,<4"]
+dependencies = ["certifi>=2024.2.2", "fastapi>=0.115,<1", "uvicorn[standard]>=0.30,<1", "sqlalchemy>=2.0,<3", "alembic>=1.14,<2", "pydantic-settings>=2.7,<3", "numpy>=2,<3", "pandas>=2.2,<4", "scipy>=1.14,<2", "scikit-learn>=1.6,<2", "exchange-calendars>=4.7,<5", "alpaca-py>=0.40,<1", "psycopg[binary]>=3.2,<4"]
 [project.optional-dependencies]
 dev = ["pytest>=8", "pytest-cov>=6", "httpx>=0.28", "ruff>=0.9"]
 [project.scripts]

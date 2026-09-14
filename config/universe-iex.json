@@ -1,0 +1,16 @@
+{
+  "version": "iex-paper-1",
+  "volume_feed": "iex",
+  "description": "IEX reported volume only; no estimate of consolidated volume. Entry checks require fresh quotes and at least $100,000 minute dollar volume.",
+  "min_price": 5,
+  "max_price": 2000,
+  "min_adv": 10000,
+  "min_dollar_volume": 5000000,
+  "max_spread_pct": 0.002,
+  "min_market_cap": null,
+  "exchanges": ["NASDAQ", "NYSE", "ARCA", "AMEX"],
+  "min_volatility": 0,
+  "max_volatility": 0.2,
+  "require_shortable": false,
+  "point_in_time": false
+}

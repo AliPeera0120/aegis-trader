@@ -19,6 +19,15 @@ class Settings(BaseSettings):
     database_url: SecretStr = SecretStr("sqlite:///var/aegis.db")
     data_feed: Literal["iex", "sip"] = "iex"
     service_enabled: bool = False
+    paper_learning_enabled: bool = False
+    # Exact registered strategy keys, never names that silently select a new version.
+    paper_learning_strategies: str = ""
+    paper_learning_max_order_notional: float = Field(default=1000, gt=0, le=1000)
+    paper_learning_capital: float = Field(default=2000, gt=0, le=2000)
+    paper_learning_daily_loss: float = Field(default=25, gt=0, le=100)
+    paper_learning_min_trades: int = Field(default=100, ge=100)
+    paper_learning_min_days: int = Field(default=10, ge=10)
+    entry_ttl_seconds: int = Field(default=180, ge=30, le=600)
     secure_cookies: bool = False
     live_trading_enabled: bool = False
     live_confirmation_phrase: SecretStr = SecretStr("")
@@ -37,6 +46,8 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def control_strength(self):
+        if self.paper_learning_enabled and self.trading_mode != "PAPER":
+            raise ValueError("Paper learning cannot be enabled in LIVE mode")
         token = self.aegis_control_token.get_secret_value()
         if token and len(token) < 32:
             raise ValueError("AEGIS_CONTROL_TOKEN must contain at least 32 characters")

@@ -86,6 +86,8 @@ class RiskEngine:
         live_capital=None,
         live_order_cap=None,
         research=False,
+        paper_learning=False,
+        paper_capital_cap=None,
     ):
         require_utc(now)
         p, c, limits = portfolio, candidate, self.limits
@@ -105,6 +107,8 @@ class RiskEngine:
             reject.append("STALE_OR_FUTURE_CLOCK")
         if not 0 <= (now - c.timestamp).total_seconds() <= limits.max_signal_age:
             reject.append("STALE_OR_FUTURE_SIGNAL")
+        if not 0 <= c.features.get("data_age_seconds", 0) <= limits.max_signal_age:
+            reject.append("STALE_OR_FUTURE_BAR")
         if (p.day_start_equity - p.equity) / p.day_start_equity >= limits.max_daily_drawdown:
             reject.append("DAILY_LOSS_LIMIT")
         if (p.week_start_equity - p.equity) / p.week_start_equity >= limits.max_weekly_drawdown:
@@ -132,7 +136,7 @@ class RiskEngine:
         if not research:
             if not p.strategy_eligible or p.drift_blocked:
                 reject.append("STRATEGY_NOT_ELIGIBLE")
-            if (
+            if not paper_learning and (
                 c.expected_value is None
                 or c.ev_lower_bound is None
                 or not c.evidence_id
@@ -186,6 +190,8 @@ class RiskEngine:
         }
         if live_order_cap is not None:
             caps["live_order_cap"] = live_order_cap / limit
+        if paper_learning and paper_capital_cap is not None:
+            caps["paper_capital"] = max(0, paper_capital_cap - total_notional) / limit
         if limits.sizing == "fixed_dollar":
             caps["fixed_dollar"] = limits.fixed_dollars / limit
         elif limits.sizing == "volatility_adjusted":

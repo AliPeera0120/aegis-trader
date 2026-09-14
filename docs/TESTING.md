@@ -1,5 +1,7 @@
 # Verification
 
+The paper experiment adds regression coverage for exact-version admission, one-share caps, loss/quote/bar/liquidity/clock/drift stops, two-position limits, LIVE rejection at both boundaries, stale entry cancellation, nested bracket reconciliation, regular-session-only bars, quote burst coalescing, temporal training and no automatic promotion. Credentialed integration additionally checks authentication/subscription of both SDK streams with verified TLS. Run stream integration while the worker is stopped to avoid exceeding the account's stream-connection limit.
+
 Run `pytest -q`, `ruff check .`, `python scripts/secret_scan.py`, and `node --check src/aegis/static/app.js`. Tests use mocks and synthetic data by default. The `paper` marker is opt-in with AEGIS_RUN_PAPER_INTEGRATION=1 and refuses LIVE configuration. No test submits a live order.
 
 CI also runs Gitleaks 8.30.1 against all fetched Git history, including root commits and merge diffs. The official binary is pinned and SHA-256 verified before execution. To repeat this scan locally with that version installed, run `gitleaks git . --redact --verbose --log-opts="--all --full-history -m" --exit-code=2`. A detected secret returns 2; scanner errors also fail the job. This avoids the initial-push failure caused by asking Git for the nonexistent parent of a root commit. Findings are redacted in the job log.

@@ -17,6 +17,7 @@ from aegis.strategies import baselines, Baseline
 from aegis.backtest import Backtester, FillModel
 from aegis.analytics import performance, decay, classify_trade, paper_comparison
 from aegis.ml import drift_report
+from aegis.learning import enabled_keys, status as learning_status, train_closed_outcomes
 
 
 class TradingRuntime:
@@ -37,6 +38,18 @@ class TradingRuntime:
         self.risk = RiskEngine(
             RiskLimits.model_validate_json(limits_path.read_text()) if limits_path.exists() else RiskLimits()
         )
+        if enabled_keys(settings):
+            self.risk = RiskEngine(
+                self.risk.limits.model_copy(
+                    update={
+                        "max_positions": min(self.risk.limits.max_positions, 2),
+                        "max_trades_day": min(self.risk.limits.max_trades_day, 10),
+                        "max_position_dollars": min(
+                            self.risk.limits.max_position_dollars, settings.paper_learning_max_order_notional
+                        ),
+                    }
+                )
+            )
         self.broker, self.data = broker, data
         self.execution = None
         self.thread = None
@@ -50,6 +63,8 @@ class TradingRuntime:
         self.scan_lock = threading.RLock()
         self.eligible_symbols = set()
         self.metadata = {}
+        self.event_lock = threading.Lock()
+        self.pending_quotes = {}
 
     def connect(self):
         if self.broker is None:
@@ -65,6 +80,14 @@ class TradingRuntime:
         return {"connected": True, "mode": self.settings.trading_mode}
 
     def _enqueue(self, kind, value):
+        if kind == "quote":
+            # Persist one quote snapshot per symbol per cycle, not an unbounded stale tick backlog.
+            row = normalize(value)
+            with self.event_lock:
+                previous = self.pending_quotes.get(row.get("symbol"))
+                if not previous or row.get("timestamp", "") > previous.get("timestamp", ""):
+                    self.pending_quotes[row.get("symbol")] = row
+            return
         try:
             self.queue.put_nowait((kind, value))
         except queue.Full:
@@ -129,17 +152,20 @@ class TradingRuntime:
         for symbol in self.symbols:
             asset = self.broker.get_asset(symbol)
             rows = sorted(daily[symbol], key=lambda b: b.start)[-20:]
-            if len(rows) < 10 or symbol not in quotes:
+            if len(rows) < 10:
                 continue
             import numpy as np
 
-            q = quotes[symbol]
+            q = quotes.get(symbol)
+            quote_is_fresh = bool(q and 0 <= (now - q.timestamp).total_seconds() <= 5)
             item = {
                 "symbol": symbol,
-                "price": (q.ask + q.bid) / 2,
+                "price": (q.ask + q.bid) / 2 if quote_is_fresh else rows[-1].close,
                 "adv": float(np.mean([b.volume for b in rows])),
                 "dollar_volume": float(np.mean([b.close * b.volume for b in rows])),
-                "spread_pct": q.spread_pct,
+                "spread_pct": q.spread_pct if quote_is_fresh else 0,
+                "spread_check": "fresh_quote" if quote_is_fresh else "deferred_to_entry_risk_check",
+                "volume_feed": self.settings.data_feed,
                 "exchange": asset.get("exchange"),
                 "shortable": asset.get("shortable", False),
                 "tradable": asset.get("tradable", False),
@@ -151,6 +177,8 @@ class TradingRuntime:
             self.store.put("instruments", symbol, item, "REFERENCE")
             self.metadata[symbol] = item
         path = Path("config/universe.json")
+        if self.settings.data_feed == "iex" and Path("config/universe-iex.json").exists():
+            path = Path("config/universe-iex.json")
         config = (
             json.loads(path.read_text())
             if path.exists()
@@ -182,13 +210,27 @@ class TradingRuntime:
         if stopped.get("reason") == "END_OF_DAY" and stopped.get("at", "")[:10] != now.isoformat()[:10]:
             self.execution.resume()
         self.session_date = day
+        self.store.set_control(
+            "session",
+            {
+                "date": str(day),
+                "prepared_at": now.isoformat(),
+                "eligible_symbols": sorted(self.eligible_symbols),
+                "feed": self.settings.data_feed,
+            },
+        )
 
     def process_events(self):
+        with self.event_lock:
+            quotes = list(self.pending_quotes.values())
+            self.pending_quotes.clear()
+        batch = [("quote", row) for row in quotes]
         for _ in range(5000):
             try:
-                kind, obj = self.queue.get_nowait()
+                batch.append(self.queue.get_nowait())
             except queue.Empty:
                 break
+        for kind, obj in batch:
             now = utcnow()
             value = normalize(obj)
             try:
@@ -215,6 +257,8 @@ class TradingRuntime:
                     )
                 elif kind == "bar":
                     start = datetime.fromisoformat(value["timestamp"].replace("Z", "+00:00"))
+                    if not self.calendar.is_open(start):
+                        continue  # Premarket bars must not contaminate regular-session VWAP/opening ranges.
                     b = Bar(
                         symbol=value["symbol"],
                         start=start,
@@ -339,6 +383,7 @@ class TradingRuntime:
 
     def report(self, date):
         mode = self.settings.trading_mode
+        training = train_closed_outcomes(self.settings, self.store)
         trades = [
             r["payload"]
             for r in self.store.list("trades", mode, 100000)
@@ -396,6 +441,8 @@ class TradingRuntime:
             "account_start": initial or None,
             "account_end": snapshots[-1]["equity"] if snapshots else None,
             "comparison": paper_comparison(expected, trades),
+            "paper_learning": learning_status(self.settings, self.store),
+            "training": training,
         }
         self.store.put("reports", stable_id(date, mode, "report"), report, mode)
         self.settings.runtime_dir.joinpath("reports").mkdir(parents=True, exist_ok=True)
@@ -443,6 +490,55 @@ class TradingRuntime:
             if result["blocked"]:
                 self.store.log("STRATEGY_AUTO_SUSPENDED", {"strategy_key": key, "monitor": result})
 
+    def run_cycle(self, now=None):
+        now = now or utcnow()
+        self.store.set_control(
+            "streams",
+            {
+                "at": now.isoformat(),
+                "market_data_authenticated": bool(
+                    self.streams and getattr(self.streams[0], "_running", False)
+                ),
+                "trade_updates_authenticated": bool(
+                    len(self.streams) > 1 and getattr(self.streams[1], "_running", False)
+                ),
+            },
+        )
+        self.process_events()
+        if not self.execution.reconcile():
+            return
+        self.execution.expire_entries()
+        self.store.set_control("market_clock", self.execution.clock)
+        day = now.astimezone(NY).date()
+        session = self.calendar.session(now)
+        if session and session[0] - timedelta(minutes=30) <= now < session[1] and self.session_date != day:
+            self.initialize_session(now)
+        if enabled_keys(self.settings) and daily_loss_breached(
+            self.execution, self.settings, self.store, day
+        ):
+            if not self.store.control(self.execution.stop_key, {}).get("stopped"):
+                self.execution.emergency_stop("PAPER_LEARNING_DAILY_LOSS", flatten=True)
+        daily = self.store.control(f"day:{self.settings.trading_mode}:{day}", {"equity": 0})["equity"]
+        if (
+            daily > 0
+            and (daily - float(self.execution.account["equity"])) / daily
+            >= self.risk.limits.max_daily_drawdown
+        ):
+            if not self.store.control(self.execution.stop_key, {}).get("stopped"):
+                self.execution.emergency_stop("DAILY_LOSS_LIMIT", self.settings.flatten_on_kill)
+        if self.execution.clock.get("is_open") and session:
+            if now >= session[1] - timedelta(minutes=5):
+                stopped = self.store.control(self.execution.stop_key, {})
+                if not stopped.get("stopped") or self.execution.positions:
+                    self.execution.emergency_stop(
+                        "END_OF_DAY", flatten=self.settings.overnight_policy == "FLATTEN"
+                    )
+            else:
+                self.scan()
+        if session and now >= session[1] and self.last_report != day:
+            self.report(day)
+            self.last_report = day
+
     def run(self):
         import fcntl
 
@@ -466,37 +562,7 @@ class TradingRuntime:
                     "heartbeat", {"at": now.isoformat(), "mode": self.settings.trading_mode}
                 )
                 try:
-                    self.process_events()
-                    if not self.execution.reconcile():
-                        self.stop_event.wait(self.settings.scan_interval_seconds)
-                        continue
-                    day = now.astimezone(NY).date()
-                    session = self.calendar.session(now)
-                    if (
-                        session
-                        and session[0] - timedelta(minutes=30) <= now < session[1]
-                        and self.session_date != day
-                    ):
-                        self.initialize_session(now)
-                    daily = self.store.control(f"day:{self.settings.trading_mode}:{day}", {"equity": 0})[
-                        "equity"
-                    ]
-                    if (
-                        daily > 0
-                        and (daily - float(self.execution.account["equity"])) / daily
-                        >= self.risk.limits.max_daily_drawdown
-                    ):
-                        if not self.store.control(self.execution.stop_key, {}).get("stopped"):
-                            self.execution.emergency_stop("DAILY_LOSS_LIMIT", self.settings.flatten_on_kill)
-                    if self.execution.clock.get("is_open") and session:
-                        if now >= session[1] - timedelta(minutes=5):
-                            if self.settings.overnight_policy == "FLATTEN" and self.execution.positions:
-                                self.execution.emergency_stop("END_OF_DAY", flatten=True)
-                        else:
-                            self.scan(now)
-                    if session and now >= session[1] and self.last_report != day:
-                        self.report(day)
-                        self.last_report = day
+                    self.run_cycle(now)
                 except Exception:
                     self.execution.healthy = False
                     self.store.set_control("critical_error", True)
@@ -517,6 +583,11 @@ class TradingRuntime:
     def start(self):
         if not self.settings.service_enabled:
             raise ValueError("Set SERVICE_ENABLED=true explicitly before starting the trading service")
+        if self.settings.paper_learning_enabled:
+            keys = enabled_keys(self.settings)
+            current = {"strategy:" + s.name + ":" + s.version for s in self.strategies}
+            if not keys or not keys <= current:
+                raise ValueError("Paper learning requires exact current registered strategy keys")
         if self.thread and self.thread.is_alive():
             return {"running": True}
         self.stop_event.clear()
@@ -529,3 +600,10 @@ class TradingRuntime:
         if self.thread:
             self.thread.join(timeout=5)
         return {"stop_requested": True}
+
+
+def daily_loss_breached(execution, settings, store, day):
+    baseline = store.control(f"day:PAPER:{day}", {"equity": 0})["equity"]
+    return (
+        baseline > 0 and baseline - float(execution.account["equity"]) >= settings.paper_learning_daily_loss
+    )

@@ -4,7 +4,7 @@ An intraday U.S. equities research application with reproducible backtests, chro
 
 **Default: PAPER. Live execution is locked. No strategy is assumed profitable.**
 
-The project is implemented and runs locally. Broker integration and Docker/PostgreSQL deployment still need qualification in the target environment. No real brokerage credentials were provided, no paper or live order was submitted, and no real-market return was fabricated. See [build status](docs/BUILD_STATUS.md) and [limitations](docs/LIMITATIONS.md) for the precise release boundary.
+The project runs locally with authenticated Alpaca paper/data streams and an opt-in bounded paper-learning experiment. Experimental orders collect unproven outcomes without promoting strategies or unlocking LIVE. Actual fills, protective exits and a full unattended session still require observed qualification. See [paper operation](docs/PAPER_TRADING.md), [September 14 preparation](docs/SESSION_READINESS_2026-09-14.md), and [limitations](docs/LIMITATIONS.md).
 
 ## Run locally
 

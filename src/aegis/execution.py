@@ -6,8 +6,9 @@ from sqlalchemy import select
 from aegis.broker import ApprovedOrder
 from aegis.data import NY
 from aegis.domain import stable_id, transition, utcnow
-from aegis.risk import Portfolio
+from aegis.risk import Portfolio, RiskEngine
 from aegis.store import orders, clean
+from aegis.learning import permitted
 
 ACTIVE = {"RISK_APPROVED", "SUBMITTED", "ACKNOWLEDGED", "PARTIALLY_FILLED", "ERROR"}
 STATUS = {
@@ -239,33 +240,64 @@ class ExecutionService:
             if any(r["candidate_id"] == candidate.id for r in self._local_orders()):
                 return {"status": "DUPLICATE", "candidate_id": candidate.id}
             self.store.put("candidates", candidate.id, candidate, self.mode)
+            if self.broker.mode != self.mode:
+                return {"status": "REJECTED", "reasons": ["BROKER_MODE_MISMATCH"]}
             if not self.reconcile():
                 return {"status": "REJECTED", "reasons": ["RECONCILIATION_FAILED"]}
             p = self.portfolio(candidate, quote, now)
-            decision = self.risk.evaluate(
+            learning = self.broker.mode == "PAPER" and permitted(
+                self.settings, self.store, candidate.strategy, candidate.version
+            )
+            risk = self.risk
+            if learning:
+                candidate = candidate.model_copy(update={"requested_qty": min(candidate.requested_qty, 1)})
+                p.strategy_eligible = not self.store.control("critical_error", False)
+                p.kill_switch = p.kill_switch or (
+                    p.day_start_equity - p.equity >= self.settings.paper_learning_daily_loss
+                )
+                # Exposure and trade-count limits also apply outside TradingRuntime.
+                risk = RiskEngine(
+                    self.risk.limits.model_copy(
+                        update={
+                            "max_positions": min(self.risk.limits.max_positions, 2),
+                            "max_trades_day": min(self.risk.limits.max_trades_day, 10),
+                        }
+                    )
+                )
+            decision = risk.evaluate(
                 candidate,
                 quote,
                 p,
                 now,
                 live_capital=self.settings.live_capital_limit if self.mode == "LIVE" else None,
-                live_order_cap=self.settings.live_max_order_notional if self.mode == "LIVE" else None,
+                live_order_cap=self.settings.live_max_order_notional
+                if self.mode == "LIVE"
+                else (self.settings.paper_learning_max_order_notional if learning else None),
+                paper_learning=learning,
+                paper_capital_cap=self.settings.paper_learning_capital if learning else None,
             )
             # Evidence payload cannot be supplied by a strategy or by a frontend candidate body.
             evidence = self.store.get(candidate.evidence_id) if candidate.evidence_id else None
-            if decision.accepted and (
-                not evidence
-                or evidence["kind"] != "evidence"
-                or evidence["payload"].get("synthetic")
-                or not evidence["payload"].get("verified")
-                or evidence["payload"].get("strategy_key")
-                != "strategy:" + candidate.strategy + ":" + candidate.version
-                or datetime.fromisoformat(evidence["payload"]["as_of"]) >= candidate.timestamp
-                or candidate.expected_value != evidence["payload"].get("ev")
-                or candidate.ev_lower_bound != evidence["payload"].get("ev_lower_bound")
+            if (
+                decision.accepted
+                and not learning
+                and (
+                    not evidence
+                    or evidence["kind"] != "evidence"
+                    or evidence["payload"].get("synthetic")
+                    or not evidence["payload"].get("verified")
+                    or evidence["payload"].get("strategy_key")
+                    != "strategy:" + candidate.strategy + ":" + candidate.version
+                    or datetime.fromisoformat(evidence["payload"]["as_of"]) >= candidate.timestamp
+                    or candidate.expected_value != evidence["payload"].get("ev")
+                    or candidate.ev_lower_bound != evidence["payload"].get("ev_lower_bound")
+                )
             ):
                 decision = decision.model_copy(
                     update={"accepted": False, "qty": 0, "reasons": ["UNVERIFIED_EV"]}
                 )
+            if learning:
+                decision = decision.model_copy(update={"reasons": [*decision.reasons, "PAPER_EXPERIMENT"]})
             self.store.put("risk_decisions", stable_id(candidate.id, "risk"), decision, self.mode)
             self.store.log(
                 "RISK_DECISION", {"candidate_id": candidate.id, "mode": self.mode, **clean(decision)}
@@ -288,6 +320,7 @@ class ExecutionService:
                 "filled_qty": 0,
                 "submitted_at": now.isoformat(),
                 "broker": {},
+                "execution_purpose": "PAPER_EXPERIMENT" if learning else "QUALIFIED_STRATEGY",
             }
             with self.store.transaction() as c:
                 c.execute(
@@ -416,11 +449,34 @@ class ExecutionService:
                     "features": c["features"],
                     "order_id": local["id"],
                     "signal_id": c["id"],
+                    "signal_at": c["timestamp"],
+                    "execution_purpose": payload.get("execution_purpose", "QUALIFIED_STRATEGY"),
                 }
                 self.store.put("trades", stable_id(local["id"], "closed"), trade, self.mode)
                 self._state(local["id"], "CLOSED")
                 self.store.log("TRADE_CLOSED", trade)
             return True
+
+    def expire_entries(self, now=None):
+        """Cancel stale unfilled entries; leave protective brackets intact after any fill."""
+        now = now or utcnow()
+        for local in self._local_orders():
+            payload = local["payload"]
+            if local["state"] not in {"ACKNOWLEDGED", "SUBMITTED"} or float(payload.get("filled_qty", 0)):
+                continue
+            if (
+                now - datetime.fromisoformat(payload["submitted_at"])
+            ).total_seconds() < self.settings.entry_ttl_seconds:
+                continue
+            remote = self.broker.get_order(local["id"])
+            self.apply_update(remote)
+            if float(remote.get("filled_qty") or 0) == 0 and remote.get("status") in {
+                "new",
+                "accepted",
+                "pending_new",
+            }:
+                self.broker.cancel_order(remote["id"])
+                self.store.log("STALE_ENTRY_CANCEL_REQUESTED", {"id": local["id"], "mode": self.mode})
 
     def apply_liquidation(self, broker_order, symbol):
         """Fold only explicitly requested liquidation fills into owned round trips."""

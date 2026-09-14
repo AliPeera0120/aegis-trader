@@ -90,10 +90,11 @@ def main(argv=None):
     )
     token.add_argument("--output", default="var/operator-token.txt")
     args = parser.parse_args(argv)
-    settings = Settings()
-    settings.runtime_dir.mkdir(parents=True, exist_ok=True)
-    store = Store(settings.database_url.get_secret_value())
+    store = None
     try:
+        settings = Settings()
+        settings.runtime_dir.mkdir(parents=True, exist_ok=True)
+        store = Store(settings.database_url.get_secret_value())
         if args.command == "serve":
             if (
                 args.host not in {"127.0.0.1", "localhost"}
@@ -321,7 +322,8 @@ def main(argv=None):
         sys.exit(1)
 
     finally:
-        store.engine.dispose()
+        if store is not None:
+            store.engine.dispose()
 
 
 if __name__ == "__main__":

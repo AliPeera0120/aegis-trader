@@ -215,6 +215,8 @@ class AlpacaData:
                     closed = opened + timedelta(minutes=durations[timeframe])
                     if not cal.is_open(opened):
                         continue
+                if closed > min(end, utcnow()):
+                    continue  # Incomplete daily/minute bars would change identity on the next download.
                 bars.append(
                     Bar(
                         symbol=symbol,
@@ -253,8 +255,12 @@ class AlpacaData:
             data = self.client.get_stock_latest_quote(
                 StockLatestQuoteRequest(symbol_or_symbols=symbols, feed=self.feed)
             )
-            return {
-                s: Quote(
+        except Exception:
+            raise RuntimeError("Quote request failed") from None
+        quotes = {}
+        for s, q in data.items():
+            try:
+                quotes[s] = Quote(
                     symbol=s,
                     timestamp=q.timestamp,
                     bid=q.bid_price,
@@ -262,16 +268,18 @@ class AlpacaData:
                     bid_size=q.bid_size,
                     ask_size=q.ask_size,
                 )
-                for s, q in data.items()
-            }
-        except Exception:
-            raise RuntimeError("Quote request failed or returned invalid data") from None
+            except ValueError:
+                self.repository.store.log(
+                    "INVALID_REST_QUOTE", {"symbol": s, "feed": self.settings.data_feed}
+                )
+        return quotes
 
     def stream(self, symbols, on_bar, on_quote, on_trade):
         from alpaca.data.live import StockDataStream
+        from aegis.tls import websocket_params
 
         key, secret = self.settings.data_credentials()
-        stream = StockDataStream(key, secret, feed=self.feed)
+        stream = StockDataStream(key, secret, feed=self.feed, websocket_params=websocket_params())
         stream.subscribe_bars(on_bar, *symbols)
         stream.subscribe_quotes(on_quote, *symbols)
         stream.subscribe_trades(on_trade, *symbols)

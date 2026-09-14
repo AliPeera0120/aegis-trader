@@ -1,5 +1,7 @@
 # ML experiments
 
+Explicit paper learning now calls this same pipeline after close once an exact strategy version has at least 100 closed experimental paper trades over 10 days. It records decision-time features and observes only already closed outcomes. Labels subtract a stated cost buffer from broker-observed gross P&L; raw broker records retain unreconciled fee status. Both outcome classes are required in training and calibration. Insufficient samples remain COLLECTING. Training reports are immutable research records, never automatic promotion or deployed model weights. Repeated temporal diagnostics need a fresh independent holdout before any later qualification.
+
 `aegis ml --rows feature-labels.json --features return_5m,relative_volume,atr --model logistic --calibration platt` consumes JSON rows containing `timestamp`, `label_end`, `symbol`, `features` and binary `target`. Optional `future_return` enables a Ridge regression and ranked expected-return diagnostic. Targets are outcomes, never contemporaneous feature inputs.
 
 Chronological train/validation/test splitting is 60/20/20 by rows, followed by purging any label reaching the next period and a five-minute embargo. Minimum 50 rows and both classes in train/calibration are required. Logistic regression includes train-only scaling. Random forest and gradient boosting are bounded alternatives. Platt scaling or isotonic regression fit validation only.

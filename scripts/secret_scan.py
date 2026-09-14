@@ -3,6 +3,7 @@
 from pathlib import Path
 import re
 import sys
+import subprocess
 
 root = Path(__file__).resolve().parents[1]
 patterns = [
@@ -14,7 +15,20 @@ patterns = [
 ]
 excluded = {".git", "var", ".venv", "__pycache__", ".pytest_cache", ".ruff_cache", "htmlcov", "build", "dist"}
 violations = []
-for path in root.rglob("*"):
+listed = subprocess.run(
+    ["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
+    cwd=root,
+    capture_output=True,
+    check=False,
+)
+# Scan everything that could be committed. Private ignored .env/var are runtime inputs;
+# accidentally tracked secrets are still included by --cached even when ignored.
+paths = (
+    [root / name for name in listed.stdout.decode().split("\0") if name]
+    if listed.returncode == 0
+    else root.rglob("*")
+)
+for path in paths:
     if not path.is_file() or any(
         p in excluded or p.endswith(".egg-info") for p in path.relative_to(root).parts
     ):

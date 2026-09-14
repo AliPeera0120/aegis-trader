@@ -17,6 +17,7 @@ from aegis.strategies import Baseline, DESCRIPTIONS
 from aegis.research import synthetic_bars, persist_experiment
 from aegis.data import DataRepository
 from aegis.analytics import monte_carlo
+from aegis.learning import status as learning_status, permitted
 
 
 class ResearchRequest(BaseModel):
@@ -176,6 +177,10 @@ def create_app(settings=None, store=None, runtime=None):
             "risk_limits": runtime.risk.limits.model_dump(),
             "feed": settings.data_feed,
             "time": utcnow().isoformat(),
+            "market_clock": store.control("market_clock", {}),
+            "streams": store.control("streams", {}),
+            "session": store.control("session", {}),
+            "paper_learning": learning_status(settings, store),
         }
 
     @app.get("/api/equity/{mode}")
@@ -192,6 +197,7 @@ def create_app(settings=None, store=None, runtime=None):
                 **s.metadata(),
                 **runtime.registry.stage("strategy:" + s.name + ":" + s.version),
                 "monitor": store.control("drift:strategy:" + s.name + ":" + s.version, {}),
+                "paper_experiment": permitted(settings, store, s.name, s.version),
             }
             for s in runtime.strategies
         ]
